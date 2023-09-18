@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="MovieAdminSpace">		<!-- 네임스페이스는 중복되면 안됨 -->
+
+	<typeAlias  alias="egovMap" type="org.egovframe.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.example.sample.service.SampleDefaultVO"/>
+	<typeAlias  alias="MovieAdminVO" type="egov.mywork1.service.MovieAdminVO"/>
+	
+	
+	<insert id="movieAdminDAO.insertmv">
+	INSERT INTO MVWRITE(UNQ,
+					  mvTITLE,					<!-- 제목 -->
+					  mvroom,					<!-- 암호 -->
+					  mvgrade,					<!-- 이름 -->
+					  mvlocation,				<!-- 내용 -->
+					  mvvolume,					<!-- 날짜 -->
+					  mvrdate,
+					  mvschedule,
+					  mvdate,
+					  mvseat,
+					  mvunixtime,
+					  mvpost)				<!-- 날짜 -->
+				VALUES(	MVWRITE_SEQ.NEXTVAL,
+						'$mvtitle$',
+						'$mvroom$',
+						'$mvgrade$',
+						'$mvlocation$',
+						'$mvvolume$',
+						SYSDATE,
+						#mvschedule#,
+						#mvdate#,
+						#mvseat#,
+						'$mvunixtime$',
+						#mvpost#)				<!-- #상영시간# 
+						-->
+	</insert>
+	
+	<insert id="movieAdminDAO.insertMovie">
+      INSERT INTO MOVIEINFO(
+                       mvtitle,      		<!-- 영화제목 -->
+                       mvgrade,      		<!-- 영화등급 -->
+                       mvpost,    			<!-- 영화포스터 -->
+                       startday,     		<!-- 상영시작일 -->
+                       lastday,     		<!-- 상영종료일 -->
+                       mvinfo,      		<!-- 영화기본정보 -->
+                       mvprev,				<!-- 영화예고편 -->
+                       mvvolume,
+                       mvdirector,
+                       mvgenre)       		
+            VALUES(
+                  '$mvtitle$',
+                  '$mvgrade$',
+                  '$mvpost$',
+                  '$startday$',
+                  '$lastday$',
+                  '$mvinfo$',
+                  '$mvprev$',
+                  #mvvolume#,
+                  #mvdirector#,
+                  #mvgenre#)
+   </insert>
+   
+   <select id="movieAdminDAO.selectMovieInfo" resultClass="MovieAdminVO" >			<!-- 영화정보 리스트 출력 -->
+   SELECT MVTITLE,
+   		  MVGRADE,
+   		  to_char(STARTDAY,'YYYY-MM-DD') AS STARTDAY,
+   		  to_char(LASTDAY,'YYYY-MM-DD') AS LASTDAY,
+   		  MVINFO,
+   		  MVPREV,
+   		  MVPOST,
+   		  mvvolume,
+   		  MVDIRECTOR,
+			MVGENRE
+   		   FROM MOVIEINFO 
+   		   WHERE MVTITLE = #mvtitle#
+   </select>
+	
+	<select id="movieAdminDAO.selectMovieInfoAll" resultClass="egovMap">
+	SELECT a.*
+	FROM (
+	    SELECT rownum rn, b.*
+	    FROM (
+	        SELECT
+	            MVTITLE,
+	            MVGRADE,
+	            MVPOST,
+	            to_char(STARTDAY, 'YYYY-MM-DD') STARTDAY,
+	            to_char(LASTDAY, 'YYYY-MM-DD') LASTDAY,
+	            MVINFO,
+	            MVDIRECTOR,
+	            MVGENRE,
+	            MVPREV
+	        FROM MOVIEINFO
+	        WHERE 1 = 1
+	        <isNotNull property="searchCondition">
+				<isNotEmpty property="searchCondition">
+	          	AND MVTITLE LIKE '%' || '$searchKeyword$' || '%'
+	        	</isNotEmpty>
+			</isNotNull>
+	    ) b
+	) a
+	WHERE rn BETWEEN '$firstIndex3$' AND '$lastIndex3$' order by startday asc
+	</select>
+	
+	<!-- 스케줄 리스트 -->
+	<select id="movieAdminDAO.selectMvList" resultClass="egovMap">
+	SELECT b.* FROM (
+         SELECT rownum rn, a.* FROM (       
+              SELECT UNQ,
+			MVTITLE,
+			MVROOM,
+			MVGRADE,
+			MVLOCATION,
+			MVVOLUME,
+			MVRDATE,
+			MVSCHEDULE,
+			mvdate 
+			FROM MVWRITE 
+			WHERE MVLOCATION = '$branch$' and mvtitle='$mvtitle$'
+            and (mvdate || ' ' || mvschedule)   >=  to_char(sysdate,'yyyy-mm-dd hh24:mi')
+			 ORDER BY mvdate            
+             ) a ) b
+             WHERE  
+         rn BETWEEN $firstIndex3$ AND $lastIndex3$
+         
+	</select>
+	
+	<delete id="movieAdminDAO.deleteInfo">
+	DELETE MOVIEINFO WHERE MVPOST = '$mvpost$'
+	</delete>
+	
+	<select id="movieAdminDAO.selectSchedule" resultClass="MovieAdminVO">
+	SELECT UNQ,
+			MVTITLE,
+			MVROOM,
+			MVPOST,
+			MVGRADE,
+			MVLOCATION,
+			MVVOLUME,
+			MVRDATE,
+			MVDATE,
+			MVSCHEDULE 
+			FROM MVWRITE 
+			WHERE UNQ = '$unq$'
+	</select>
+	
+	<delete id="movieAdminDAO.deleteSchedule">
+	DELETE MVWRITE WHERE unq = '$unq$'
+	</delete>
+	
+	<update id="movieAdminDAO.updateMovieInfo">
+	UPDATE MOVIEINFO SET  MVGRADE=#mvgrade#,
+							 MVPOST=#mvpost#,
+							 STARTDAY=#startday#,
+							 LASTDAY=#lastday#,
+							 MVINFO=#mvinfo#,
+							 MVPREV=#mvprev#,
+							 MVDIRECTOR=#mvdirector#,
+							 MVGENRE=#mvgenre#
+							  WHERE MVTITLE = #mvtitle#
+	</update>
+	
+	<select id="movieAdminDAO.selectSchedulecnt" resultClass="int">
+	SELECT COUNT(*) FROM MVWRITE
+					 WHERE MVTITLE=#mvtitle# 
+					 AND MVROOM=#mvroom# 
+					 AND MVUNIXTIME 
+					 BETWEEN #mvunixtime#-13600 
+					 AND #mvunixtime#+13600 
+					 AND MVDATE=#mvdate#
+	</select>
+	
+	
+	<select id="movieAdminDAO.selectDday" resultClass="egovMap">
+		select a.* from (select rownum rn,b.* from (select 
+			   ceil((startday)-(sysdate)) dday 
+			from movieinfo where startday>sysdate ) b) a where 5 >= rn order by dday asc
+	</select>
+	
+	<insert id="movieDAO.insertTicket">
+      insert into testticket(count, seats) values(#count#,#seats#)
+	  </insert>
+	  
+	  <select id="movieDAO.selectTicketChk" resultClass="egovMap">
+	     select seats from movieticketing where unq=#unq#	<!-- 예매정보 테이블로 수정필요 -->
+	  </select>
+	
+	
+	<select id="movieAdminDAO.selectSchedulecnt2" resultClass="int">
+	SELECT COUNT(*) FROM MVWRITE WHERE MVLOCATION=#mvlocation# AND MVROOM=#mvroom# AND MVDATE=#mvdate#
+	</select>
+	
+	<!-- 메인화면 페이징처리 -->
+	<select id="movieAdminDAO.selectMainListSoon" resultClass="egovMap">
+      select a.* from (select rownum rn,b.* from (select 
+               mvtitle,
+            mvgrade,
+            mvpost,
+            startday,
+            lastday,
+            mvinfo,
+            mvprev from movieinfo where startday > sysdate and lastday >= sysdate ) b) a where rn between '$firstIndex2$' AND '$lastIndex2$' order by startday asc
+   </select>
+   
+   <select id="movieAdminDAO.selectMainListNow" resultClass="egovMap">
+      select a.* from (select rownum rn,b.* from (select 
+               mvtitle,
+            mvgrade,
+            mvpost,
+            startday,
+            lastday,
+            mvinfo,
+            mvprev from movieinfo where sysdate > startday ) b) a where rn between '$firstIndex1$' AND '$lastIndex1$' order by startday asc
+   </select>
+   
+   
+   <select id="movieDAO.selectMovie1Total" resultClass="int">
+      select count(*) from movieinfo where sysdate > startday
+   </select>
+   
+   <select id="movieDAO.selectMovie2Total" resultClass="int">
+      select count(*) from movieinfo where startday > sysdate
+   </select>
+   
+     <update id="movieAdminDAO.updateMovieSchedule">
+		UPDATE mvwrite SET  mvseat=mvseat-#cnt# WHERE UNQ = #unq#
+   </update>
+   
+   <select id="movieAdminDAO.selectTitle" resultClass="egovMap">
+   
+		SELECT DISTINCT( MVTITLE)
+		                FROM MVWRITE 
+		                WHERE MVLOCATION = '$branch$'
+		                group by mvtitle
+	
+	</select>
+
+   <!-- 영화 total -->
+   <select id="movieAdminDAO.selectMovieTotal" resultClass="int">
+   
+      select count(*) total from movieinfo      
+   
+   </select>
+   
+   <!-- 상품 등록 -->
+   
+   <insert id="movieAdminDAO.insertMd">
+      
+      INSERT INTO MDSTORE(MDNAME         <!-- 상품 이름 -->
+                     ,MDPHOTO      <!-- 상품 사진 -->
+                     ,MDDETAIL      <!-- 상품 구성품 -->
+                     ,MDPRICE      <!-- 상품 가격 -->
+                     ,EXPIRATIONDATE   <!-- 상품 유효기간 -->
+                           )         
+            VALUES('$mdname$'         
+                  ,'$mdphoto$'      
+                  ,'$mddetail$'      
+                  ,'$mdprice$'      
+                  ,'$expirationdate$'         
+            )      
+   
+   </insert>
+   
+   <!-- 상품 리스트 -->
+   <select id="movieAdminDAO.selectStoreMd" resultClass="MovieAdminVO">
+   
+      SELECT rownum rn ,mdname,mdphoto,to_char(mdprice,'9999,9999,999') mdprice,mddetail from mdstore
+   
+   </select>
+	<!-- 상품 삭제 -->
+   <delete id="movieAdminDAO.deleteStore">
+   
+      DELETE mdstore WHERE mdname = '$mdname$'
+   
+   </delete>
+   
+   <!-- 스케줄 total -->
+   <select id="movieAdminDAO.selectScheduleTotal" resultClass="int">
+   
+   		SELECT count(*) total from mvwrite
+   		WHERE MVLOCATION = '$branch$' and mvtitle='$mvtitle$'
+            and (mvdate || ' ' || mvschedule)   >=  to_char(sysdate,'yyyy-mm-dd hh24:mi')
+   
+   </select>
+	
+</sqlMap>

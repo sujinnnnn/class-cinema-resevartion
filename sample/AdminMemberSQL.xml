@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- 여긴 아이바티스임  자바x이런거 아님 -->
+
+<!-- mybatis 도 있음 -->
+
+<sqlMap namespace="AdminMemberSpace">  <!-- 절대 중복되면 안됨 -->
+
+<!-- 리턴클래스 출력에 관한것(ex:select) -->
+   <typeAlias  alias="egovMap"  type="org.egovframe.rte.psl.dataaccess.util.EgovMap"/>
+   <typeAlias  alias="searchVO" type="egovframework.example.sample.service.SampleDefaultVO"/>
+   <typeAlias  alias="adminMemberVO" type="egov.mywork1.service.AdminMemberVO"/>
+   <typeAlias  alias="defaultVO" type="egov.mywork1.service.DefaultVO"/>
+
+
+      
+<insert id="adloginDAO.insertAdLogin">                           
+      INSERT INTO adminmemberinfo ( ADMINID    
+                     ,ADMINPW      
+                     ,branch
+                     ,adminaddr,
+                     adminphone,
+                     adminpic)      
+                            
+               VALUES (  #adminid#
+                     , #adminpw#
+                     , #branch#
+                     , #adminaddr#
+                     , #adminphone#
+                     , #adminpic#)
+                                          
+
+   </insert>
+   
+   <select id="adloginDAO.selectAdminList" resultClass="egovMap">
+   
+      SELECT b2.* FROM (
+        SELECT rownum rn, a2.* FROM (
+       select c.* from(
+          select a.* from(
+                   select  adminid
+                    ,ADMINPW
+                   ,branch
+                   ,ADMINADDR
+                   ,ADMINPHONE
+                   ,ADMINPIC
+           from adminmemberinfo
+              where adminid='root' 
+                   order by adminid) a
+         union all 
+          select b.*from(
+                 select  adminid
+                    ,ADMINPW
+                   ,branch
+                   ,ADMINADDR
+                   ,ADMINPHONE
+                   ,ADMINPIC
+           from adminmemberinfo
+              where adminid!='root' 
+                   order by adminid) b
+         ) c
+             
+              ) a2 ) b2
+   </select>
+   
+   <select id="adloginDAO.selectAdminDetail" resultClass="AdminMemberVO">
+      SELECT     ADMINID
+            ,ADMINPW
+            ,branch
+            
+      FROM    
+            adminmemberinfo
+      WHERE   
+            adminid = '$adminid$'
+   </select>
+   
+   <update id="adloginDAO.updateAdLogin">
+   
+      UPDATE adminmemberinfo SET 
+                  adminpw  = '$adminpw$'
+                 , branch     = '$branch$'
+      WHERE   
+             adminid = '$adminid$'
+   
+   </update>
+   <!-- 직원 삭제 -->
+      <delete id="adloginDAO.deleteAdLogin">
+         delete from adminmemberinfo where adminid='$adminid$'
+      </delete>
+      
+      
+      <!-- 회원 목록 -->
+   <select id="adloginDAO.selectMemberList" resultClass="egovMap">     
+
+      SELECT b.* FROM (
+         SELECT rownum rn, a.* FROM (       
+              SELECT     userid
+                    ,username
+                    ,state 
+                FROM mvmember                                 
+             WHERE 1=1   
+             
+             <isNotNull property="searchCondition">
+                 <isNotEmpty property="searchCondition">
+                   AND $searchCondition$ LIKE '%$searchKeyword$%'
+                  </isNotEmpty>
+               </isNotNull>
+            
+             ) a ) b
+             WHERE  
+         rn BETWEEN $firstIndex3$ AND $lastIndex3$
+
+   </select>
+   
+   <!-- 회원 상태 수정 -->
+   <update id="adloginDAO.updateMemberState">
+   
+      UPDATE mvmember SET state = #state# where userid = #userid#
+   
+   </update>
+   
+   <!-- 회원 total -->
+   <select id="adloginDAO.selectMemberTotal" resultClass="int">
+   
+      SELECT count(*) total from mvmember   
+   
+   </select>
+   
+   <!-- 지점 스케줄 삭제 -->
+   <delete id="adloginDAO.deleteSchedule">
+   
+      DELETE from mvwrite where mvlocation='$branch$'
+   
+   </delete>
+   
+   
+
+   
+
+</sqlMap>

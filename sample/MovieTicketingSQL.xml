@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="MovieTicketingSpace">		<!-- 네임스페이스는 중복되면 안됨 -->
+
+	<typeAlias  alias="egovMap" type="org.egovframe.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.example.sample.service.SampleDefaultVO"/>
+	<typeAlias  alias="movieTicketingVO" type="egov.mywork1.service.MovieTicketingVO"/>
+	
+<!-- 영화관 리스트 출력 -->
+   <select id="movieTicketingDAO.selectTheaterList" resultClass="movieTicketingVO">
+   
+      SELECT mvlocation   from mvwrite  group by mvlocation      
+
+   </select>   
+
+<!-- 영화 제목 출력 -->
+   <select id="movieTicketingDAO.selectMovieList" resultClass="movieTicketingVO">
+   
+      SELECT distinct mvtitle,mvlocation   from mvwrite 
+         where<!--  1=1 
+            <isNotNull property="mvlocation">
+              <isNotEmpty property="mvlocation">
+            and --> 
+            mvlocation = #mvlocation#
+            and  (mvdate || ' ' || mvschedule)   >=  to_char(sysdate,'yyyy-mm-dd hh24:mi')
+            <!-- </isNotEmpty>
+            </isNotNull> -->
+      
+               
+
+   </select>   
+   
+<!-- 영화 상영날짜 출력 -->
+   <select id="movieTicketingDAO.selectDateList" resultClass="movieTicketingVO">
+   
+         select rownum rn, a2.*from(
+             SELECT distinct mvdate, substr(mvdate,'9') mdate,mvtitle,mvlocation
+             , to_char(to_date(mvdate,'yyyy-mm-dd'),'dy') dy             
+               from mvwrite
+         where
+            mvlocation = #mvlocation#
+            and mvtitle = #mvtitle#
+                and mvdate >= sysdate-1) a2 
+             where 7 >= rownum                   
+         
+   </select>                     
+   
+   
+<!-- 영화 시작 시간 출력 -->
+   <select id="movieTicketingDAO.selectTimeList" resultClass="movieTicketingVO">
+   
+      
+      SELECT distinct mvschedule,mvdate,mvtitle,mvlocation,mvvolume,mvroom,unq,mvseat   from mvwrite    
+         where mvlocation=#mvlocation#
+           and mvtitle = #mvtitle#   
+           and mvdate = #mvdate#        
+           and  (mvdate || ' ' || mvschedule)   >=  to_char(sysdate,'yyyy-mm-dd hh24:mi')
+             order by mvschedule      
+
+   </select>
+   
+   
+   <!-- 영화예매에서 좌석으로 정보 전달 -->
+   <select id="movieTicketingDAO.selectScheduleline" resultClass="movieTicketingVO">
+   		SELECT UNQ,
+			MVTITLE,
+			MVROOM,
+			MVGRADE,
+			MVLOCATION,
+			MVVOLUME,
+			MVRDATE,
+			MVSCHEDULE,
+			MVDATE,
+			MVSEAT,
+			MVUNIXTIME,
+			MVPOST 
+			FROM MVWRITE 
+			WHERE MVLOCATION='$mvlocation$' AND
+				  MVTITLE='$mvtitle$' AND
+				  MVDATE='$mvdate$' AND
+				  MVSCHEDULE='$mvschedule$' AND
+				  MVROOM = '$mvroom$'
+   </select>
+	
+	<insert id="MovieTicketingDAO.insertTicket">
+		INSERT INTO movieticketing(userid,
+					  mvTITLE,
+					  mvgrade,
+					  mvschedule,
+					  mvdate,
+					  mvpost,
+					  mvvolume,
+					  mvlocation,
+					  mvroom,
+					  seats,
+					  unq)				
+				VALUES(	'$userid$',
+						'$mvtitle$',
+						'$mvgrade$',
+						'$mvschedule$',
+						'$mvdate$',
+						'$mvpost$',
+						'$mvvolume$',
+						'$mvlocation$',
+						'$mvroom$',
+						'$seats$',
+						'$unq$')
+	</insert>
+	
+	
+</sqlMap>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- 여긴 아이바티스임  자바x이런거 아님 -->
+
+<!-- mybatis 도 있음 -->
+
+<sqlMap namespace="AdminTheaterSpace">  <!-- 절대 중복되면 안됨 -->
+
+<!-- 리턴클래스 출력에 관한것(ex:select) -->
+   <typeAlias  alias="egovMap"  type="org.egovframe.rte.psl.dataaccess.util.EgovMap"/>
+   <typeAlias  alias="searchVO" type="egovframework.example.sample.service.SampleDefaultVO"/>
+   <typeAlias  alias="adminTheaterVO" type="egov.mywork1.service.AdminTheaterVO"/>
+   <typeAlias  alias="adminMemberVO" type="egov.mywork1.service.AdminMemberVO"/>
+
+   <select id="adminTheaterDAO.selectTheaterList" resultClass="adminTheaterVO">
+   
+      SELECT no,branch,theater,useyn,seats,id 
+         from ADMINTHEATER
+            where id='$id$' order by no    
+
+   </select>   
+
+
+   <insert id="adminTheaterDAO.insertTheater"> 
+   
+      INSERT INTO ADMINTHEATER(no         <!-- 번호 -->
+                        ,branch      <!-- 영업점 -->
+                        ,theater   <!-- 상영관 -->
+                        ,useyn      <!-- 사용여부 -->
+                        ,seats       <!-- 좌석수 -->
+                        ,id)      <!-- id -->
+         values((select nvl(max(no),0)+1 from ADMINTHEATER where id=#id#)
+               ,#branch#
+               ,#theater#
+               ,#useyn#
+               ,#seats#
+               ,#id#)
+   
+    </insert>   
+    
+   <update id="adminTheaterDAO.updateTheater">
+   
+      UPDATE ADMINTHEATER SET theater = '$theater$'
+                        ,useyn = '$useyn$'
+                        ,seats = '$seats$'
+         WHERE no = '$no$' and id = #id#
+   
+   </update> 
+
+   <delete id="adminTheaterDAO.deleteTheater">
+   
+      DELETE FROM ADMINTHEATER where no = '$no$' and id = '$id$'
+   
+   </delete>
+
+   <update id="adminTheaterDAO.updatedeleteTheaterNo">
+      
+      UPDATE ADMINTHEATER SET no=no-1 where no>'$no$' and branch='$branch$'
+   
+   </update> 
+
+   <!-- 관리자 로그인 -->
+      <select id="adminTheaterDAO.selectAdminCount" resultClass="int">
+      
+         SELECT COUNT(*) FROM adminmemberinfo
+            WHERE adminid='$adminid$' AND adminpw='$adminpw$'
+      
+      </select>
+      
+      <!-- 영업점 불러오기 -->
+      <select id="adminTheaterDAO.selectAdminBranch" resultClass="adminTheaterVO">
+      
+         SELECT branch from adminmemberinfo where adminid='$userid$' group by branch
+      
+      </select>
+      
+      <select id="adminTheaterDAO.selectTheaterList2" resultClass="adminTheaterVO">
+   
+      SELECT no,branch,theater,useyn,seats,id 
+         from ADMINTHEATER
+            where id='$userid$' and useyn = 'Y' order by no    
+
+   </select>   
+   
+   <!-- 상영관 삭제 -> 스케줄에서 삭제된 상영관 삭제 -->
+   <delete id="adminTheaterDAO.deleteTheaterSchedule">
+   
+      DELETE from mvwrite where mvroom = '$theater$' and mvlocation='$branch$'
+   
+   </delete>
+   
+   <!-- 상영중인 영화 스케줄 여부 -->
+   <select id="adminTheaterDAO.selectScheduleCount" resultClass="int">
+   
+      SELECT count(*) from mvwrite where mvroom = '$theater$' and mvlocation='$branch$'
+   
+   </select>
+      
+
+   
+
+</sqlMap>

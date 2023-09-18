@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="MovieSpace">  <!-- 절대 중복되면 안됨 -->
+
+	<typeAlias  alias="egovMap"  type="org.egovframe.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.example.sample.service.SampleDefaultVO"/>
+	<typeAlias  alias="movieMemberVO"  type="egov.mywork1.service.MovieMemberVO"/>
+	<typeAlias  alias="MypageVO"  type="egov.mywork1.service.MypageVO"/>
+	
+	<insert id="movieMemberDAO.insertMember"> <!-- DAO파일의 id값이랑 똑같아야함 -->
+										
+		INSERT INTO Mvmember ( USERID 	<!-- 아이디 -->
+							,USERPW		<!-- 비빌번호 -->
+							,USERNAME	<!-- 이름 -->
+							,GENDER		<!-- 성별 -->
+							,BIRTH		<!-- 생년월일 -->
+							,PHONEC		<!-- 통신사 -->
+							,PHONE		<!-- 휴대폰 번호 -->
+							,EMAIL		<!-- 이메일 -->
+							,POSTNO		<!-- 우편번호 -->
+							,ADDR1 		<!-- 주소 -->
+							,ADDR2 		<!-- 주소 -->
+							,ADDR3 		<!-- 주소 -->
+							,RDATE)
+					VALUES (  #userid#
+							, #userpw#
+							, #username#
+							, #gender#
+							, #birth#
+							, #phonec#
+							, #phone1#||#phone2#||#phone3#
+							, #email#
+							, #postno#
+							,#addr1#
+							,#addr2#
+							,#addr3# 
+							,sysdate)							
+
+	</insert>
+	
+	<select id="movieMemberDAO.selectMvmemberUserID" resultClass="int">
+	
+		SELECT COUNT(*) FROM MVMEMBER WHERE userid = '$userid$'
+	
+	</select>
+	
+	<select id="movieMemberDAO.selectMemberDetail" resultClass="movieMemberVO">
+	
+		SELECT	userid
+			   ,username
+			   ,gender
+			   ,to_char(birth,'yyyy-mm-dd') birth
+			   ,phonec
+			   ,phone
+			   ,email
+			   ,postno
+			   ,addr1
+			   ,addr2
+			   ,addr3
+			FROM MVMEMBER
+			WHERE USERID = #userid#
+	
+	</select>
+	
+	<select id="movieMemberDAO.selectmovieMemberUserID" resultClass="int">
+		
+		SELECT count(*) from mvmember where userid = #userid#
+	
+	</select>
+	
+	 <select id="movieMemberDAO.selectMemberCount" resultClass="int">
+      SELECT COUNT(*) FROM mvmember 
+                  WHERE 
+                     userid=#userid# AND userpw=#userpw#
+  	 </select>
+
+	
+	 <!-- 회원정보 수정 -->      
+   <update id="movieMemberDAO.updateMovieMember">
+   
+      UPDATE mvmember set username = #username#
+                     ,gender  = #gender#
+                     ,birth     = #birth#
+                     ,phonec    = #phonec#
+                     ,phone    = #phone1#||#phone2#||#phone3#
+                     ,email    = #email#
+                     ,postno    = #postno#
+                     ,addr1    = #addr1#
+                     ,addr2    = #addr2#
+                     ,addr3    = #addr3#                     
+         WHERE 
+                     userid=#userid#
+   
+   </update>
+   
+   
+      <select id="movieMemberDAO.selectMovieMemberUseridReturn" resultClass="string">
+      SELECT userid FROM mvmember 
+                  WHERE email=#email#
+   </select>
+   
+   <select id="movieMemberDAO.selectMovieMemberExistCount" resultClass="int">
+      SELECT COUNT (*) FROM mvmember 
+                  WHERE 
+                     userid=#userid#
+                  AND 
+                     email=#email#
+   </select>
+   
+   <update id="movieMemberDAO.updateMovieMemberPass">
+      UPDATE mvmember SET userpw=#userpw# WHERE userid=#userid#
+   </update>
+   
+    <!-- 회원탈퇴 비밀번호 체크 -->
+   <select id="movieMemberDAO.selectPwCheck" resultClass="int">
+   
+   	 SELECT COUNT (*) FROM mvmember 
+                  WHERE 
+                     userpw='$userpw$'  and userid = '$userid$'               
+   
+   </select>
+   
+   <!-- 회원 탈퇴 -->
+   	<update id="movieMemberDAO.updateMemberState">
+   	
+   		UPDATE mvmember set state = '3' where userid = #userid#
+   	
+   	</update>
+   	
+   	<!-- 비밀번호 변경 -->
+   	<update id="movieMemberDAO.updatepw">
+   	
+   		UPDATE mvmember set userpw = '$npw1$' where userid = '$userid$'
+   	
+   	</update>
+   	
+   	<!-- 회원 상태 확인 -->
+   	<select id="movieMemberDAO.selectStatechk" resultClass="int">
+   	
+   		select state from mvmember where userid = #userid#
+   	
+   	</select>
+   	
+   	<select id="movieMemberDAO.selectMemberList" resultClass="egovMap">
+          SELECT USERID
+             , MVTITLE
+             , MVGRADE
+             , MVSCHEDULE
+             , MVDATE
+             , MVPOST
+             , MVVOLUME
+             , MVLOCATION
+             , MVROOM
+             , SEATS
+             , UNQ
+                       
+      FROM 
+         MOVIETICKETING
+      WHERE USERID='$userid$'      
+   </select>
+   
+   <select id ="movieMemberDAO.selectMbreserveDetail" resultClass="MypageVO">
+      
+       SELECT USERID
+             , MVTITLE
+             , MVGRADE
+             , MVSCHEDULE
+             , MVDATE
+             , MVPOST
+             , MVVOLUME
+             , MVLOCATION
+             , MVROOM
+             , SEATS
+             , UNQ
+             , to_char(sysdate,'yyyy-mm-dd hh24:mi') today
+             , (mvdate || ' ' || mvschedule) booking
+                       
+      FROM 
+         MOVIETICKETING
+      WHERE MVTITLE='$mvtitle$' AND MVSCHEDULE='$mvschedule$' AND MVDATE='$mvdate$' and seats='$seats$'   
+   
+   </select>
+   
+   <delete id="movieMemberDAO.deletembrDelete">
+         DELETE FROM MOVIETICKETING
+         WHERE MVTITLE='$mvtitle$' AND MVSCHEDULE='$mvschedule$' AND MVDATE='$mvdate$' and seats='$seats$'   
+   </delete>
+
+	
+
+</sqlMap>
